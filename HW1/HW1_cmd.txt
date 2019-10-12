@@ -1,0 +1,8 @@
+rm -f /tmp/sahw1.tmp
+uname -a >> /tmp/sahw1.tmp
+date -Iseconds >> /tmp/sahw1.tmp
+id >> /tmp/sahw1.tmp
+service sshd status >> /tmp/sahw1.tmp
+zfs list >> /tmp/sahw1.tmp
+sudo wg >> /tmp/sahw1.tmp
+mail -s '[SAHW1] 0516215' sahw1@savpn.nctu.me < /tmp/sahw1.tmp
