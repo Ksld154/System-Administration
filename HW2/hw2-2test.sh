@@ -10,7 +10,7 @@ OUTPUT=/tmp/output.sh.$$
 vi_editor=${EDITOR-vi}
 
 # trap and delete temp files
-trap "rm $OUTPUT; rm $INPUT; exit" SIGHUP SIGINT SIGTERM
+trap "exit 1" SIGHUP SIGINT SIGTERM
 
 #
 # Purpose - display output using msgbox 
@@ -21,7 +21,7 @@ trap "rm $OUTPUT; rm $INPUT; exit" SIGHUP SIGINT SIGTERM
 function display_output(){
 	local h=${1-10}			# box height default 10
 	local w=${2-41} 		# box width default 41
-	local t=${3-Output} 	# box title 
+	local t=${3-Output} 		# box title 
 	dialog --backtitle "Linux Shell Script Tutorial" --title "${t}" --clear --msgbox "$(<$OUTPUT)" ${h} ${w}
 }
 #
@@ -38,6 +38,13 @@ function show_calendar(){
 	cal >$OUTPUT
 	display_output 13 25 "Calendar"
 }
+
+function show_cpu(){
+	cpu_model="CPU Model: $(sysctl hw.model | cut -d ' ' -f 2-)"
+	cpu_machine="CPU Machine: $(sysctl hw.machine | cut -d ' ' -f 2-)"
+	cpu_core="CPU Core: $(sysctl hw.ncpu | cut -d ' ' -f 2-)"
+	dialog --title "CPU Info" --clear --msgbox "\n\n$cpu_model\n\n$cpu_machine \n\n$cpu_core" 30 100
+}
 #
 # set infinite loop
 #
@@ -45,35 +52,33 @@ while true
 do
 
 	### display main menu ###
-	exit_menu=(dialog --clear  \
+	dialog --clear  \
 	--title "[SYSTEM INFO]" \
-	--menu "Choose the TASK" 30 50 5 \
+	--menu "Choose a TASK" 30 100 25 \
 	1 "CPU INFO" \
 	2 "MEMORY INFO" \
 	3 "NETWORK INFO" \
 	4 "FILE BROWSER" 2>"${INPUT}"
-	)
 	
-	if ["$exit_menu" = "1"]
+	if [ "$?" = "1" ]
 	then
 		echo "Bye"
-		break
-
-	else
-		menuitem=$(<"${INPUT}")
-
-		# make decsion 
-		case $menuitem in
-			1) show_date;;
-			2) show_calendar;;
-			3) $vi_editor;;
-			4) echo "Bye"; break;;
-		esac
-	
+		exit 0
 	fi
+	
+	menuitem=$(<"${INPUT}")
+
+	# make decsion 
+	case $menuitem in
+		1) show_cpu;;
+		2) show_calendar;;
+		3) show_date;;
+		4) show_calendar;;
+	esac
 
 done
 
+echo "$?"
 # if temp files found, delete em
 [ -f $OUTPUT ] && rm $OUTPUT
 [ -f $INPUT ] && rm $INPUT
