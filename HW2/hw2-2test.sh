@@ -45,12 +45,9 @@ while true
 do
 
 	### display main menu ###
-	dialog --clear  --help-button --backtitle "Linux Shell Script Tutorial" \
-	--title "[ M A I N - M E N U ]" \
-	--menu "You can use the UP/DOWN arrow keys, the first \n\
-	letter of the choice as a hot key, or the \n\
-	number keys 1-9 to choose an option.\n\
-	Choose the TASK" 15 50 4 \
+	dialog --clear  \
+	--title "[SYSTEM INFO]" \
+	--menu "Choose the TASK" 30 50 5 \
 	1 "CPU INFO" \
 	2 "MEMORY INFO" \
 	3 "NETWORK INFO" \
