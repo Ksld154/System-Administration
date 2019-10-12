@@ -45,24 +45,32 @@ while true
 do
 
 	### display main menu ###
-	dialog --clear  \
+	exit_menu=(dialog --clear  \
 	--title "[SYSTEM INFO]" \
 	--menu "Choose the TASK" 30 50 5 \
 	1 "CPU INFO" \
 	2 "MEMORY INFO" \
 	3 "NETWORK INFO" \
 	4 "FILE BROWSER" 2>"${INPUT}"
+	)
+	
+	if ["$exit_menu" = "1"]
+	then
+		echo "Bye"
+		break
 
-	menuitem=$(<"${INPUT}")
+	else
+		menuitem=$(<"${INPUT}")
 
-
-	# make decsion 
-	case $menuitem in
-		1) show_date;;
-		2) show_calendar;;
-		3) $vi_editor;;
-		4) echo "Bye"; break;;
-	esac
+		# make decsion 
+		case $menuitem in
+			1) show_date;;
+			2) show_calendar;;
+			3) $vi_editor;;
+			4) echo "Bye"; break;;
+		esac
+	
+	fi
 
 done
 
