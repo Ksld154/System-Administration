@@ -45,6 +45,33 @@ function show_cpu(){
 	cpu_core="CPU Core: $(sysctl hw.ncpu | cut -d ' ' -f 2-)"
 	dialog --title "CPU Info" --clear --msgbox "\n\n$cpu_model\n\n$cpu_machine \n\n$cpu_core" 30 100
 }
+
+
+function show_network(){
+	ipString=$(ifconfig -l)
+	ipList=($ipString)
+	ipListOption=("${ipList[@]/%/" +"}")
+
+	dialog --clear \
+        --title "Network Interface" \
+        --menu "Choose a network interface: " \
+        30 100 25 \
+	#"1" "Option1" "2" "Option2" \
+       	#"${ipListOption[@]}" \
+	${ipString}        
+	2>&1 >/dev/tty
+}
+
+show_network_single(){
+	interface_name="Interface Name: $1"
+	ipv4_addr="$(ifconfig em0 | grep 'inet' | awk '{print "Ipv4 Addr: "$2}')"
+	netmask="$(ifconfig em0 | grep 'netmask' | awk '{print "Netmask:   "$4}')"
+	mac_addr="$(ifconfig em0 | grep 'ether' | awk '{print "Mac Addr:  "$2}')"
+	
+	dialog --title "Network Interface Info" --clear --msgbox "\n\n$interface_name\n\n\n\n$ipv4_addr\n\n$netmask \n\n$mac_addr" 30 100
+}
+
+
 #
 # set infinite loop
 #
@@ -53,7 +80,7 @@ do
 
 	### display main menu ###
 	dialog --clear  \
-	--title "[SYSTEM INFO]" \
+	--title "SYSTEM INFO" \
 	--menu "Choose a TASK" 30 100 25 \
 	1 "CPU INFO" \
 	2 "MEMORY INFO" \
@@ -72,7 +99,7 @@ do
 	case $menuitem in
 		1) show_cpu;;
 		2) show_calendar;;
-		3) show_date;;
+		3) show_network_single;;
 		4) show_calendar;;
 	esac
 
