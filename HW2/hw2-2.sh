@@ -1,74 +1,106 @@
-#! /bin/bash
-# utilitymenu.sh - A sample shell script to display menus on screen
-# Store menu options selected by the user
-INPUT=/tmp/menu.sh.$$
+sysctl hw.model hw.machine hw.ncpu
 
-# Storage file for displaying cal and date command output
-OUTPUT=/tmp/output.sh.$$
+ifconfig -s | sed -n '1!p' | awk '{print $1}'
 
-# get text editor or fall back to vi_editor
-vi_editor=${EDITOR-vi}
-
-# trap and delete temp files
-trap "rm $OUTPUT; rm $INPUT; exit" SIGHUP SIGINT SIGTERM
-
-#
-# Purpose - display output using msgbox 
-#  $1 -> set msgbox height
-#  $2 -> set msgbox width
-#  $3 -> set msgbox title
-#
-function display_output(){
-	local h=${1-10}			# box height default 10
-	local w=${2-41} 		# box width default 41
-	local t=${3-Output} 	# box title 
-	dialog --backtitle "Linux Shell Script Tutorial" --title "${t}" --clear --msgbox "$(<$OUTPUT)" ${h} ${w}
-}
-#
-# Purpose - display current system date & time
-#
-function show_date(){
-	echo "Today is $(date) @ $(hostname -f)." >$OUTPUT
-    display_output 6 60 "Date and Time"
-}
-#
-# Purpose - display a calendar
-#
-function show_calendar(){
-	cal >$OUTPUT
-	display_output 13 25 "Calendar"
-}
-#
-# set infinite loop
-#
-while true
-do
-
-### display main menu ###
-dialog --clear  --help-button --backtitle "Linux Shell Script Tutorial" \
---title "[ M A I N - M E N U ]" \
---menu "You can use the UP/DOWN arrow keys, the first \n\
-letter of the choice as a hot key, or the \n\
-number keys 1-9 to choose an option.\n\
-Choose the TASK" 15 50 4 \
-Date/time "Displays date and time" \
-Calendar "Displays a calendar" \
-Editor "Start a text editor" \
-Exit "Exit to the shell" 2>"${INPUT}"
-
-menuitem=$(<"${INPUT}")
+CHOICE=$(dialog --clear \
+                --backtitle "$BACKTITLE" \
+                --title "$TITLE" \
+                --menu "$MENU" \
+                $HEIGHT $WIDTH $CHOICE_HEIGHT \
+                "${OPTIONS[@]}" \
+                2>&1 >/dev/tty)
 
 
-# make decsion 
-case $menuitem in
-	Date/time) show_date;;
-	Calendar) show_calendar;;
-	Editor) $vi_editor;;
-	Exit) echo "Bye"; break;;
-esac
 
+# em0 *
+# lo0 *
+ipString=$(ifconfig -l)
+ipList=($ipString)
+ipListOption=("${ipList[@]/%/ "*"}")
+printf '%s\n' "${ipListOption[@]}"
+
+awk '{a[$7]=$7} 
+	END 
+	{for(i in a)
+		printf i" "a[i]" "
+	}'
+
+awk '{a[$7]=$7} 
+	END 
+	{
+		for(i in a)
+			printf i" "a[i]" "
+	}'
+
+
+
+iptr=$(ifconfig -l | tr " " "\n" | awk '{a[$1]=$1} END {for(i in a)printf i" "a[i]" "}')
+echo ${iptr}
+
+
+
+iptr=$(ifconfig -l | tr " " "\n")
+IFS=' ' read -ra interfaces <<< echo ${iptr} 
+for i in "${interfaces[@]}"; do
+    echo "$i"
 done
 
-# if temp files found, delete em
-[ -f $OUTPUT ] && rm $OUTPUT
-[ -f $INPUT ] && rm $INPUT
+
+
+var=$(ifconfig -l | tr " " "\n" | awk '{print v++,$0}')
+
+
+
+ipString=$(ifconfig -l)
+ipList=($ipString)
+for ((i=0; i<${#ipList[@]}; i++));
+do
+	ipList[$i]=${i}" "${ipList[$i]}
+done
+echo ${ipList[1]}
+
+
+# ramsize=$(expr $hwmemsize / $((1024**3)))
+
+phy_mem=$(sysctl -n hw.physmem)
+
+SIZE_FORMAT="B"
+KB=$((1024**1))
+MB=$((1024**2))
+GB=$((1024**3))
+TB=$((1024**4))
+
+if [ $phy_mem -gt $GB ]; then
+	SIZE_FORMAT="GB"
+	avail_mem="$(dmesg | grep memory | sed -n 2p | awk '{print $4}')"
+	
+	phy_mem=$(echo "$phy_mem $GB" | awk '{printf "%.2f \n", $1/$2}')
+	avail_mem=$(echo "$avail_mem $GB" | awk '{printf "%.2f \n", $1/$2}')
+	used_mem=$(echo "$phy_mem $avail_mem" | awk '{printf "%.2f \n", $1-$2}')
+
+fi
+echo $phy_mem$SIZE_FORMAT
+echo $used_mem$SIZE_FORMAT
+echo $avail_mem$SIZE_FORMAT
+
+
+phy_mem=$(sysctl -n hw.physmem)
+avail_mem="$(dmesg | grep memory | sed -n 2p | awk '{print $4}')"
+mem_usage=$(echo "$phy_mem $avail_mem" | awk '{printf "%d \n", (1-($2/$1))*100}')
+echo $mem_usage
+
+
+GB=$((1024**3))
+SIZE_FORMAT="GB"
+phy_mem=$(echo "$phy_mem $GB" | awk '{printf "%.2f \n", $1/$2}')
+echo $phy_mem$SIZE_FORMAT
+avail_mem=$(echo "$avail_mem $GB" | awk '{printf "%.2f \n", $1/$2}')
+used_mem=$(echo "$phy_mem $avail_mem" | awk '{printf "%.2f \n", $1-$2}')
+echo $avail_mem$SIZE_FORMAT
+
+
+
+
+ifconfig em0 | grep 'inet' | awk '{print "ipv4:    "$2}'
+ifconfig em0 | grep 'netmask' | awk '{print "Netmask: "$4}'
+ifconfig em0 | grep 'ether' | awk '{print "Mac:     "$2}'
