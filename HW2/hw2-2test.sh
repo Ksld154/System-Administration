@@ -83,12 +83,15 @@ function show_network(){
 
 function readable_unit(){
 	file_size=$1
+	file_size_accurate=$1
 	file_unit_cnt=0
 	file_unit="B"
 
 	while [ ${file_size} -gt 1024 ]; do
 		file_unit_cnt=$((${file_unit_cnt}+1))
-        file_size=$(echo "$file_size" | awk '{printf "%.3f \n", $1/1024}')
+        	file_size_accurate=$(echo "$file_size_accurate" | awk '{printf "%.8f \n", $1/1024}')
+        	file_size=$(echo "$file_size" | awk '{printf "%d \n", $1/1024}')
+		#echo ${file_size_accurate}
 	done
 
 	case ${file_unit_cnt} in
@@ -101,7 +104,7 @@ function readable_unit(){
 		*) file_unit="B";;
 	esac
 
-	echo ${file_size}" "${file_unit}
+	echo ${file_size_accurate}" "${file_unit}
 
 	return 0
 }
@@ -110,13 +113,10 @@ function readable_unit(){
 
 function mem_info(){
 
-	SIZE_FORMAT="B"
-	KB=$((1024**1))
-	GB=$((1024**3))
 	
-	# phy_mem=$(sysctl -n hw.physmem)
-	# avail_mem=$(sysctl -n hw.usermem)	
-	# mem_usage=$(echo "$phy_mem $avail_mem" | awk '{printf "%d \n", (1-($2/$1))*100}')
+	#phy_mem=$(sysctl -n hw.physmem)
+	#avail_mem=$(sysctl -n hw.usermem)	
+	mem_usage=0
 	
 	(
 		#while
@@ -126,21 +126,23 @@ function mem_info(){
 			used_mem=$(echo "$phy_mem $avail_mem" | awk '{printf "%d \n", $1-$2}')				
 			mem_usage=$(echo "$phy_mem $avail_mem" | awk '{printf "%d \n", (1-($2/$1))*100}')
 			
-			phy_mem_unit=$(readable_unit ${phy_mem})
-			avail_mem_unit=$(readable_unit ${avail_mem})
-			used_mem_unit=$(readable_unit ${used_mem})
+			phy_mem_unit=$( readable_unit ${phy_mem})
+			avail_mem_unit=$( readable_unit ${avail_mem})
+			used_mem_unit=$( readable_unit ${used_mem})
 
-			# echo "XXX"
-			# 	echo "Memory Info and Usage\n\n"
-			# 	echo "Total: "$phy_mem2$SIZE_FORMAT
-			# 	echo "Used:  "$used_mem2$SIZE_FORMAT
-			# 	echo "Free:  "$avail_mem2$SIZE_FORMAT
-			# echo "XXX"
+			echo ${mem_usage}
 
-			echo mem_usage
+			echo "XXX"
+			 	# echo "Memory Info and Usage\n\n"
+			 	echo -e "\n\nTotal: "$phy_mem_unit
+			 	echo -e "Used:  "$avail_mem_unit
+		 		echo -e "Free:  "$used_mem_unit
+				echo -e "\n"${mem_usage}
+			echo "XXX"
+
 			sleep 1
 		done
-	) | dialog --title "Memory Info and Usage" --gauge "Memory Info and Usage" 20 70 ${mem_usage}
+	) | dialog --title "Memory Info and Usage" --gauge "" 20 70 
 
 }
 
