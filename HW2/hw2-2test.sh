@@ -82,10 +82,7 @@ function show_network(){
 }
 
 function mem_info(){
-	DIALOG=${DIALOG=dialog}
-	phy_mem=$(sysctl -n hw.physmem)
-	avail_mem="$(dmesg | grep memory | sed -n 2p | awk '{print $4}')"
-	mem_usage=$(echo "$phy_mem $avail_mem" | awk '{printf "%d \n", (1-($2/$1))*100}')
+
 
 	SIZE_FORMAT="B"
 	KB=$((1024**1))
@@ -93,40 +90,40 @@ function mem_info(){
 	GB=$((1024**3))
 	TB=$((1024**4))
 	
-	#mem_usage=0
-
+	phy_mem=$(sysctl -n hw.physmem)
+	avail_mem=$(sysctl -n hw.usermem)	
+	mem_usage=$(echo "$phy_mem $avail_mem" | awk '{printf "%d \n", (1-($2/$1))*100}')
+	
 	COUNT=10
 	(
 		#while
-
-
-
 		while test $COUNT != 110
 		do
-			
+			phy_mem=$(sysctl -n hw.physmem)
+			avail_mem=$(sysctl -n hw.usermem)	
+			mem_usage=$(echo "$phy_mem $avail_mem" | awk '{printf "%d \n", (1-($2/$1))*100}')
+		
 			if [ $phy_mem -gt $GB ]; then
 				SIZE_FORMAT="GB"
-				avail_mem="$(dmesg | grep memory | sed -n 2p | awk '{print $4}')"
-				mem_usage=$(echo "$phy_mem $avail_mem" | awk '{printf "%d \n", (1-($2/$1))*100}')
 				
-				echo $mem_usage
 				echo "XXX"
-				avail_mem=$(echo "$avail_mem $GB" | awk '{printf "%d \n", $1/$2}')
-				phy_mem2=$(echo "$phy_mem2 $GB" | awk '{printf "%d \n", $1/$2}')
-				used_mem=$(echo "$phy_mem $avail_mem" | awk '{printf "%d \n", $1-$2}')
+					echo "Total: "$phy_mem2$SIZE_FORMAT
+					echo "Used:  "$used_mem$SIZE_FORMAT
+					echo "Free:  "$avail_mem2$SIZE_FORMAT
 				echo "XXX"
+				
+				phy_mem2=$(echo "$phy_mem $GB" | awk '{printf "%.3f \n", $1/$2}')
+				avail_mem2=$(echo "$avail_mem $GB" | awk '{printf "%.3f \n", $1/$2}')
+				used_mem=$(echo "$phy_mem2 $avail_mem2" | awk '{printf "%.3f \n", $1-$2}')
 
 				
 
 			fi
-			echo $phy_mem2$SIZE_FORMAT
-			echo $used_mem$SIZE_FORMAT
-			echo $avail_mem$SIZE_FORMAT
-			
+
+			echo mem_usage
 			sleep 1
 		done
-	) |
-	$DIALOG --title "My Gauge" --gauge "Hi, this is a gauge widget" 20 70 0
+	) | dialog --title "Memory Info and Usage" --gauge "Memory Info and Usage" 20 70 ${mem_usage}
 
 }
 
