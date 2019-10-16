@@ -111,40 +111,54 @@ function readable_unit(){
 
 
 
-function mem_info(){
+function show_mem(){
 
 	
-	#phy_mem=$(sysctl -n hw.physmem)
-	#avail_mem=$(sysctl -n hw.usermem)	
-	mem_usage=0
+	# IFS=
+	while true; do
+
+	  	
+		read -t 0.01 -rN 1 && [[ $REPLY == 'q' ]] && break		
+
+		phy_mem=$(sysctl -n hw.physmem)
+		avail_mem=$(sysctl -n hw.usermem)
+		used_mem=$(echo "$phy_mem $avail_mem" | awk '{printf "%d \n", $1-$2}')				
+		mem_usage=$(echo "$phy_mem $avail_mem" | awk '{printf "%d \n", (1-($2/$1))*100}')
+		
+		phy_mem_unit=$( readable_unit ${phy_mem})
+		avail_mem_unit=$( readable_unit ${avail_mem})
+		used_mem_unit=$( readable_unit ${used_mem})
+
+		output_msg=$( echo -e "\n\nTotal: "$phy_mem_unit
+	 		echo -e "Used:  "$avail_mem_unit
+			echo -e "Free:  "$used_mem_unit
+		)
+
+		#read -t 0.25 -r 1 -N 1 key_input
+		#if [ "${key_input}" == 'q' ]; then
+		#	break
+		#fi
+
+		(sleep 1) | dialog --title "Memory Info and Usage" --gauge "${output_msg}" 20 70 ${mem_usage}
+	done
 	
-	(
-		#while
-		while true; do
-			phy_mem=$(sysctl -n hw.physmem)
-			avail_mem=$(sysctl -n hw.usermem)
-			used_mem=$(echo "$phy_mem $avail_mem" | awk '{printf "%d \n", $1-$2}')				
-			mem_usage=$(echo "$phy_mem $avail_mem" | awk '{printf "%d \n", (1-($2/$1))*100}')
-			
-			phy_mem_unit=$( readable_unit ${phy_mem})
-			avail_mem_unit=$( readable_unit ${avail_mem})
-			used_mem_unit=$( readable_unit ${used_mem})
+	sys_info
+}
 
-			echo ${mem_usage}
+function file_browser(){
+	current_path=$(pwd | awk '{print "Current path: " $1}')
+	fileList=$(ls -alh | tail -n +2 | awk '{printf("%s ", $9); system("file --mime-type -b " $9)}')
+	# fileList=$(ls -alh | tail -n +2 | awk '{print $9 " +"}')
+	# fileList=$(file --mime-type *)
+	# exec 3>&1
+	
+	option=$(dialog --clear --title "File Browser" --menu "${current_path}" 30 100 30 ${fileList} 2>&1 > /dev/tty)
 
-			echo "XXX"
-			 	# echo "Memory Info and Usage\n\n"
-			 	echo -e "\n\nTotal: "$phy_mem_unit
-			 	echo -e "Used:  "$avail_mem_unit
-		 		echo -e "Free:  "$used_mem_unit
-				echo -e "\n"${mem_usage}
-			echo "XXX"
-
-			sleep 1
-		done
-	) | dialog --title "Memory Info and Usage" --gauge "" 20 70 
 
 }
+
+
+
 
 #
 # set infinite loop
@@ -174,9 +188,9 @@ function sys_info(){
 		# make decsion 
 		case $sys_menu in
 			1) show_cpu;;
-			2) mem_info;;
+			2) show_mem;;
 			3) show_network;;
-			4) show_calendar;;
+			4) file_browser;;
 		esac
 
 	done
