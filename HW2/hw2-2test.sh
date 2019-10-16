@@ -110,83 +110,32 @@ function readable_unit(){
 
 function mem_info(){
 
-
 	SIZE_FORMAT="B"
 	KB=$((1024**1))
-	MB=$((1024**2))
 	GB=$((1024**3))
-	TB=$((1024**4))
 	
-	phy_mem=$(sysctl -n hw.physmem)
-	avail_mem=$(sysctl -n hw.usermem)	
-	mem_usage=$(echo "$phy_mem $avail_mem" | awk '{printf "%d \n", (1-($2/$1))*100}')
+	# phy_mem=$(sysctl -n hw.physmem)
+	# avail_mem=$(sysctl -n hw.usermem)	
+	# mem_usage=$(echo "$phy_mem $avail_mem" | awk '{printf "%d \n", (1-($2/$1))*100}')
 	
-	COUNT=10
 	(
 		#while
-		while test $COUNT != 110
-		do
+		while true; do
 			phy_mem=$(sysctl -n hw.physmem)
 			avail_mem=$(sysctl -n hw.usermem)
-			used_mem=$(echo "$phy_mem $avail_mem" | awk '{printf "%.d \n", $1-$2}')				
+			used_mem=$(echo "$phy_mem $avail_mem" | awk '{printf "%d \n", $1-$2}')				
 			mem_usage=$(echo "$phy_mem $avail_mem" | awk '{printf "%d \n", (1-($2/$1))*100}')
-		
-			PHY_UNIT_CNT=0
-			AVAIL_UNIT_CNT=0
-			USED_UNIT_CNT=0
-			TOTAL_UNIT_CNT=0
 			
-			PHY_UNIT="B"			
-			AVAIL_UNIT="B"
-			USED_UNIT="B"
-		
-			while [ $TOTAL_UNIT_CNT -lt 3 ]; do
-				
-				if [ ${phy_mem} -gt $KB]; do
-					phy_mem=$(${phy_mem}/1024)
-					PHY_UNIT_CNT=$(${PHY_UNIT_CNT}+1)
-				else
-					$TOTAL_UNIT_CNT=$(${TOTAL_UNIT_CNT}+1)
-				fi
-				
-				if [ ${avail_mem} -gt $KB]; do
-					avail_mem=$(${avail_mem}/1024)
-					AVAIL_UNIT_CNT=$(${AVAIL_UNIT_CNT}+1)
-				else
-					TOTAL_UNIT_CNT=$(${TOTAL_UNIT_CNT}+1)
-				fi
+			phy_mem_unit=$(readable_unit ${phy_mem})
+			avail_mem_unit=$(readable_unit ${avail_mem})
+			used_mem_unit=$(readable_unit ${used_mem})
 
-				if [ ${used_mem} -gt $KB]; do
-					used_mem=$(${used_mem}/1024)
-					USED_UNIT_CNT=$(${USED_UNIT_CNT}+1)
-				else
-					TOTAL_UNIT_CNT=$(${TOTAL_UNIT_CNT}+1)
-				fi
-			done
-			
-			case ${PHY_UNIT_CNT} in
-				0) PHY_UNIT="B";;
-				1) PHY_UNIT="KB";;
-				2) PHY_UNIT="MB";;
-				3) PHY_UNIT="GB";;
-				4) PHY_UNIT="TB";;
-				*) PHY_UNIT="B";;
-			esac
-
-			if [ $phy_mem -gt $GB ]; then
-				SIZE_FORMAT="GB"
-				
-				phy_mem2=$(echo "$phy_mem $GB" | awk '{printf "%.3f \n", $1/$2}')
-				avail_mem2=$(echo "$avail_mem $GB" | awk '{printf "%.3f \n", $1/$2}')
-				used_mem2=$(echo "$phy_mem2 $avail_mem2" | awk '{printf "%.3f \n", $1-$2}')
-
-				echo "XXX"
-					echo "Memory Info and Usage\n\n"
-					echo "Total: "$phy_mem2$SIZE_FORMAT
-					echo "Used:  "$used_mem2$SIZE_FORMAT
-					echo "Free:  "$avail_mem2$SIZE_FORMAT
-				echo "XXX"
-			fi
+			# echo "XXX"
+			# 	echo "Memory Info and Usage\n\n"
+			# 	echo "Total: "$phy_mem2$SIZE_FORMAT
+			# 	echo "Used:  "$used_mem2$SIZE_FORMAT
+			# 	echo "Free:  "$avail_mem2$SIZE_FORMAT
+			# echo "XXX"
 
 			echo mem_usage
 			sleep 1
