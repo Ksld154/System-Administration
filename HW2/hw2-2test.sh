@@ -24,7 +24,7 @@ function show_cpu(){
 
 
 function show_network(){
-	ipList=$(ifconfig -l | tr " " "\n" | awk '{print $1 " +"}')
+	ipList=$(ifconfig -l | tr " " "\n" | awk '{print $1 " ."}')
 	# exec 3>&1
 	
 	option=$(dialog --clear --title "Network Interface" --menu "Choose a network interface: " 30 100 25 $ipList 2>&1 > /dev/tty)
@@ -34,7 +34,6 @@ function show_network(){
 	
 	# select ok
 	if [ $ok -eq 0 ]; then
-		# interface_name="Interface Name: $option"
 
 		interface_name="Interface Name: $option"
 		ipv4_addr="$(ifconfig $option | grep 'inet ' | awk '{print "Ipv4 Addr: "$2}')"
@@ -121,7 +120,6 @@ function show_mem(){
 }
 
 function file_browser(){
-	cd ~
 	current_path=$(pwd | awk '{print "Current path: " $1}')
 	# fileList=$(ls -alh | tail -n +2 | awk '{printf("%s ", $9); system("file --mime-type -b " $9)}')
 	# fileList=$(ls -alh | tail -n +2 | awk '{print $9 " +"}')
@@ -139,6 +137,8 @@ function file_browser(){
 		file_info ${option}
 	elif [ -d ${option} ]; then
 		echo ${option}" is a folder."
+		cd ${option}
+		file_browser
 	fi
 }
 
@@ -157,22 +157,20 @@ function file_info(){
 		
 
 	
-
+	# contains text as a sub string
 	if [[ ${fileinfo} =~ "text" ]]; then
 		# echo ${option}" is a text file."
 		
 		# show info with editor option
-		dialog --title "File Info" --no-label "EDIT" --yesno "${output_msg}"  30 100
+		dialog --title "File Info" --yes-label "OK" --no-label "EDIT" --yesno "${output_msg}"  30 100
 
 		# Get exit status
 		# 0 means user hit [yes] button.
 		# 1 means user hit [no] button.
-		# 255 means user hit [Esc] key.
 		response=$?
 		case ${response} in
 		   0) file_browser;;
 		   1) ${EDITOR} ${filename};;
-		   255) echo "[ESC] key pressed.";;
 		esac
 	else 
 		dialog --title "File Info" --clear --msgbox "${output_msg}" 30 100
