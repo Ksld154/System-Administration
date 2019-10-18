@@ -1,11 +1,4 @@
 #!/usr/local/bin/bash
-# utilitymenu.sh - A sample shell script to display menus on screen
-# Store menu options selected by the user
-INPUT=/tmp/menu.sh.$$
-
-# Storage file for displaying cal and date command output
-OUTPUT=/tmp/output.sh.$$
-
 
 export EDITOR="ee" 
 
