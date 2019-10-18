@@ -17,6 +17,7 @@ function show_cpu(){
 
 
 
+
 function show_network(){
 	ipList=$(ifconfig -l | tr " " "\n" | awk '{print $1 " ."}')
 	
