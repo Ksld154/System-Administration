@@ -6,9 +6,9 @@ INPUT=/tmp/menu.sh.$$
 # Storage file for displaying cal and date command output
 OUTPUT=/tmp/output.sh.$$
 
-# get text editor or fall back to vi_editor
-vi_editor=${EDITOR-vi}
+
 export EDITOR="ee" 
+
 # trap and delete temp files
 trap "exit 1" SIGHUP SIGINT SIGTERM
 
@@ -17,6 +17,7 @@ function show_cpu(){
 	cpu_model="CPU Model: $(sysctl hw.model | cut -d ' ' -f 2-)"
 	cpu_machine="CPU Machine: $(sysctl hw.machine | cut -d ' ' -f 2-)"
 	cpu_core="CPU Core: $(sysctl hw.ncpu | cut -d ' ' -f 2-)"
+	
 	dialog --title "CPU Info" --clear --msgbox "\n\n$cpu_model\n\n$cpu_machine \n\n$cpu_core" 30 100
 }
 
@@ -25,12 +26,9 @@ function show_cpu(){
 
 function show_network(){
 	ipList=$(ifconfig -l | tr " " "\n" | awk '{print $1 " ."}')
-	# exec 3>&1
 	
 	option=$(dialog --clear --title "Network Interface" --menu "Choose a network interface: " 30 100 25 $ipList 2>&1 > /dev/tty)
 	ok=$?
-
-	echo $option
 	
 	# select ok
 	if [ $ok -eq 0 ]; then
@@ -46,19 +44,19 @@ function show_network(){
 			echo -e "\nMac Addr:  "${mac_addr}
 		)		
 
-
 		dialog --title "Network Interface Info" --clear --msgbox "${output_msg}" 30 100
+		
 		ok=$?
-		echo $ok
 		if [ $ok -eq 0 ]; then
 			show_network
 		fi		
-	
+
+	# go back to sys menu
 	elif [ $ok -eq 1 ]; then
 		sys_info		
-	fi		
-		
+	fi				
 }
+
 
 function readable_unit(){
 	file_size=$1
@@ -73,7 +71,6 @@ function readable_unit(){
 		file_unit_cnt=$((${file_unit_cnt}+1))
         	file_size_accurate=$(echo "$file_size_accurate" | awk '{printf "%.4f \n", $1/1024}')
         	file_size=$(echo "$file_size" | awk '{printf "%d \n", $1/1024}')
-		#echo ${file_size_accurate}
 	done
 
 	case ${file_unit_cnt} in
@@ -86,7 +83,6 @@ function readable_unit(){
 		*) file_unit="B";;
 	esac
 	
-	#printf "%4.4f %s\n" ${file_size_accurate} ${file_unit}
 	echo ${file_size_accurate}" "${file_unit}
 
 	return 0
@@ -96,11 +92,7 @@ function readable_unit(){
 
 function show_mem(){
 
-	
-	# IFS=
 	while true; do
-
-	  	
 
 		phy_mem=$(sysctl -n hw.physmem)
 		avail_mem=$(vmstat -H | tail -n 1 | awk '{printf "%d\n", $5*1024}')
@@ -111,7 +103,8 @@ function show_mem(){
 		avail_mem_unit=$( readable_unit ${avail_mem})
 		used_mem_unit=$( readable_unit ${used_mem})
 
-		output_msg=$( echo -e "\n\nTotal: "$phy_mem_unit
+		output_msg=$( 
+			echo -e "\n\nTotal: "$phy_mem_unit
 	 		echo -e "Used:  "$avail_mem_unit
 			echo -e "Free:  "$used_mem_unit
 		)
@@ -120,7 +113,7 @@ function show_mem(){
 		(sleep 1) | dialog --title "Memory Info and Usage" --gauge "${output_msg}" 30 100 ${mem_usage}
 		
 		#read -t 3 -r 1 -N 1 key_input
-		read -s -t 3		
+		read -s -t 3.1		
 		if [ $? -eq 0 ]; then
 			break
 		fi
@@ -131,8 +124,6 @@ function show_mem(){
 
 function file_browser(){
 	current_path=$(pwd | awk '{print "Current path: " $1}')
-	# fileList=$(ls -alh | tail -n +2 | awk '{printf("%s ", $9); system("file --mime-type -b " $9)}')
-	# fileList=$(ls -alh | tail -n +2 | awk '{print $9 " +"}')
 	fileList=$(ls -alh | tail -n +2 | awk '{print $9}' | xargs file --mime-type | tr ":" " ")
 	
 	option=$(dialog --clear --title "File Browser" --menu "${current_path}" 30 100 30 ${fileList} 2>&1 > /dev/tty)
@@ -140,13 +131,12 @@ function file_browser(){
 	if [ $? -eq 1 ]; then
 		sys_info
 	fi
-	echo ${option}
 
+	# is a file
 	if [ -f ${option} ]; then
-		echo ${option}" is a file."
 		file_info ${option}
+	# is a folder
 	elif [ -d ${option} ]; then
-		echo ${option}" is a folder."
 		cd ${option}
 		file_browser
 	fi
@@ -165,7 +155,6 @@ function file_info(){
 		echo -e "<File Size>: "${filesize_readable}
 	)
 		
-
 	
 	# contains text as a sub string
 	if [[ ${fileinfo} =~ "text" ]]; then
@@ -173,11 +162,11 @@ function file_info(){
 		
 		# show info with editor option
 		dialog --title "File Info" --yes-label "OK" --no-label "EDIT" --yesno "${output_msg}"  30 100
+		response=$?
 
 		# Get exit status
-		# 0 means user hit [yes] button.
-		# 1 means user hit [no] button.
-		response=$?
+		# 0 means user hit [OK] button.
+		# 1 means user hit [EDIT] button.
 		case ${response} in
 		   0) file_browser;;
 		   1) ${EDITOR} ${filename};;
@@ -195,23 +184,38 @@ function cpu_loading(){
 		cpu_idle=$(top -n 1 | grep "^CPU" | awk '{print $10}')
 		cpu_usage=$(echo "${cpu_idle}" | awk '{printf "%d \n", (100-$1)}')
 	  	
-		output_msg=$( echo -e "\n\nTotal: "$phy_mem_unit
-	 		echo -e "Used:  "$avail_mem_unit
-			echo -e "Free:  "$used_mem_unit
-		)
 
-		(sleep 1) | dialog --title "Memory Info and Usage" --gauge "${each_cpu_info}" 30 100 ${cpu_usage}
+		(sleep 1) | dialog --title "CPU Loading" --gauge "${each_cpu_info}" 30 100 ${cpu_usage}
 		
-		read -s -t 3		
-		if [ $? -eq 0 ]; then
+		
+		 read -s -t 5		
+		 if [ $? -eq 0 ]; then
 			break
-		fi
+		 fi
 	done
 	
-
-	# dialog --title "CPU Loading" --clear --msgbox "${cpu_info}" 30 100
 }
 
+function cpu_new(){
+	(while true; do
+		each_cpu_info=$(top -P -n | grep "^CPU" | awk '{print $1 $2 " USER: " $3 " SYST: " $7 " IDLE: " $11}')
+		cpu_idle=$(top -n 1 | grep "^CPU" | awk '{print $10}')
+		cpu_usage=$(echo "${cpu_idle}" | awk '{printf "%d \n", (100-$1)}')
+	  	
+
+
+		echo "XXX"
+		echo ${cpu_usage}
+		echo ${each_cpu_info}
+		echo "XXX"
+		
+		keyborad_input="q"
+		read -s -n 1 -t 0.1 keyborad_input
+		if [ $? -eq 0 ] && [ "${keyborad_input}" == $"\r" ]; then
+			return
+		fi
+	done) |  dialog --title "CPU Loading" --gauge "${each_cpu_info}" 30 100 ${cpu_usage}	
+}
 
 #
 # set infinite loop
@@ -237,7 +241,6 @@ function sys_info(){
 			exit 0
 		fi
 		
-		#menuitem=$(<"${INPUT}")
 
 		# make decsion 
 		case $sys_menu in
@@ -257,10 +260,5 @@ function sys_info(){
 sys_info
 
 
-
-
-
 echo "$?"
-# if temp files found, delete em
-[ -f $OUTPUT ] && rm $OUTPUT
-[ -f $INPUT ] && rm $INPUT
+
